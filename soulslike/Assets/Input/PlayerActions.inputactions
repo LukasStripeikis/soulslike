@@ -67,7 +67,7 @@
                     "priority": 0
                 },
                 {
-                    "name": "TargetLock",
+                    "name": "LockOn",
                     "type": "Button",
                     "id": "7212ab06-c0a0-4cdf-9759-84d6361a053a",
                     "expectedControlType": "",
@@ -201,7 +201,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Gamepad",
-                    "action": "TargetLock",
+                    "action": "LockOn",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

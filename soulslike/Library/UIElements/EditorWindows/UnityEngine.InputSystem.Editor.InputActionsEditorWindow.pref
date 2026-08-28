@@ -21,6 +21,6 @@ MonoBehaviour:
   m_Values:
   - '{"m_FixedPaneDimension":200.0}'
   - '{"m_FixedPaneDimension":320.0}'
-  - '{"m_ShowAlternatingRowBackgrounds":0,"serializedVirtualizationData":{"scrollOffset":{"x":0.0,"y":0.0},"firstVisibleIndex":0,"contentPadding":0.0,"contentHeight":0.0,"anchoredItemIndex":0,"anchorOffset":0.0},"m_SelectedIds":[1171808654],"m_ExpandedItemIds":[580822724,379789215,-835614813,-1695713874,15961792,-1609059917,2068890311,1610520445,-1234055832,312649012,-1708674950,1171808654,-766760953]}'
-  - '{"m_ScrollOffset":{"x":0.0,"y":0.0}}'
+  - '{"m_ShowAlternatingRowBackgrounds":0,"serializedVirtualizationData":{"scrollOffset":{"x":0.0,"y":0.0},"firstVisibleIndex":13,"contentPadding":0.0,"contentHeight":0.0,"anchoredItemIndex":0,"anchorOffset":0.0},"m_SelectedIds":[-766760953],"m_ExpandedItemIds":[379789215,-835614813,-1695713874,15961792,-1609059917,2068890311,1610520445,-1234055832,312649012,-1708674950,1171808654,-766760953,191589587,580822724]}'
+  - '{"m_ScrollOffset":{"x":0.0,"y":306.9000244140625}}'
   - '{"m_Value":0.0,"m_LowValue":0.0,"m_HighValue":0.0}'

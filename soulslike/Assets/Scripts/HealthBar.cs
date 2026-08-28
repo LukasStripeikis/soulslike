@@ -58,8 +58,8 @@ public class HealthBar : MonoBehaviour
     void Update()
     {
         float deltaTime = Time.unscaledDeltaTime;
-        if (gameObject.name == "Stamina") 
-            Debug.Log($"health timer running: {healthTimer.IsRunning()} health delta timer running: {healthDeltaTimer.IsRunning()}");
+        // if (gameObject.name == "Stamina") 
+        //     Debug.Log($"health timer running: {healthTimer.IsRunning()} health delta timer running: {healthDeltaTimer.IsRunning()}");
         healthTimer.Update(deltaTime);
         if (healthTimer.IsFinished())
         {

@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 using StateId = System.UInt32;
 public class State
 {
@@ -42,11 +45,20 @@ public class StateMachine
     private StateTransition currentTransition;
     private float time;
 
+    public event Action<State> OnStateStart;
+    public event Action<State> OnStateEnd;
+
     public StateMachine(State[] states, StateTransition[] transitions, StateId startStateId)
     {
         this.states = states;
-        currentState = FindState(startStateId);
-        nextState = null;
+        this.nextState = null;
+        State startState = FindState(startStateId);
+        if (startState.IsLimitedTimeState())
+        {
+            Console.Write("Attempted to construct state machine with limited time starting state which is not allowed");
+            this.currentState = null;
+        }
+        else SetState(startState);
 
         this.transitions = transitions;
         currentTransition = null;
@@ -102,6 +114,16 @@ public class StateMachine
         }
         return null;
     }
+    public List<StateTransition> FindTransitionsFrom(StateId startStateId)
+    {
+        List<StateTransition> stateTransitions = new List<StateTransition>();
+        foreach (StateTransition transition in transitions)
+        {
+            if (transition.GetStartStateId() == startStateId)
+                stateTransitions.Add(transition);
+        }
+        return stateTransitions;
+    }
 
     public bool TrySetState(StateId newStateId)
     {
@@ -121,7 +143,14 @@ public class StateMachine
     }
     private void SetState(State state)
     {
-        currentState = state;
-        nextState = null;
+        State oldState = currentState;
+        this.currentState = state;
+        //If the new state is active for limited time, we set the current state
+        //as the state that will be returned to after this new limited state
+        if (this.currentState.IsLimitedTimeState()) this.nextState = oldState;
+        else this.nextState = null;
+
+        if (oldState != null) OnStateEnd?.Invoke(oldState);
+        if (currentState != null) OnStateStart?.Invoke(currentState);
     }
 }

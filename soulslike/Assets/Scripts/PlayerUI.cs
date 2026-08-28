@@ -15,7 +15,7 @@ public class PlayerUI : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void LateUpdate()
     {
         healthBar.UpdateHealthUI(PlayerController.Instance.GetHealth());
         manaBar.UpdateHealthUI(PlayerController.Instance.GetMana());

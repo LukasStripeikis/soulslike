@@ -577,6 +577,7 @@
 "Assets/Scripts/Inventory.cs"
 "Assets/Scripts/ItemSO.cs"
 "Assets/Scripts/PickableItem.cs"
+"Assets/Scripts/PlayerAnimator.cs"
 "Assets/Scripts/PlayerController.cs"
 "Assets/Scripts/PlayerUI.cs"
 "Assets/Scripts/StateMachine.cs"
