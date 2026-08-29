@@ -52,7 +52,7 @@ public class MovementSettings
 
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField] private Camera playerCamera;
+    [SerializeField] private ThirdPersonCamera playerCamera;
 
     [Header("Input")]
     [SerializeField] private InputActionAsset inputActions;
@@ -240,22 +240,25 @@ public class PlayerController : MonoBehaviour
         stateMachine.Update(deltaTime);
         HandleInput();
         
-        if (IsState(PlayerStateName.Sprinting)) SetStaminaDelta(-sprintStaminaLossRate * deltaTime);
-        else if (stamina < maxStamina) SetStaminaDelta(staminaGainRate * deltaTime);
+        if (stamina < maxStamina) SetStaminaDelta(staminaGainRate * deltaTime);
 
         if (HasEnoughStamina(rollStaminaCost) && isDodgeButtonPressed)
             StartRoll();
 
-        if (doLockOn && isLockOnButtonPressed)
-            TryToggleLockOn();
+        if (doLockOn)
+        {
+            if (isLockOnButtonPressed) TryToggleLockOn();
+            //NOTE: rolling always occurs in the direction we are facing, and since facing dir is modified
+            //when we are locked on, if we force same lock on dir when rolling, we would always roll forward
+            //into the lock on target, which is not what we want
+            if (IsLockedOntoATarget() && !IsState(PlayerStateName.Rolling)) ForceFaceLockOnTarget();
+        }
 
         if (updatePosToBoneRig && boneRigRoot != null)
             UpdatePosFromBoneRig();
 
-        
-
         Debug.Log($"Player state: {(PlayerStateName)stateMachine.GetCurrentState().GetId()} "+
-            $"v: {velocity} a: {acceleration} isGrounded:{IsGroundedState()}");
+        $"v: {velocity} a: {acceleration} isGrounded:{IsGroundedState()}");
     }
 
     private void OnDrawGizmosSelected()
@@ -264,6 +267,8 @@ public class PlayerController : MonoBehaviour
             transform.rotation, Vector3.one);
         Gizmos.DrawWireCube(Vector3.zero, groundedBoxHalfExtents * 2f);
         Gizmos.matrix = Matrix4x4.identity;
+
+        Gizmos.DrawWireSphere(transform.position, lockOnRadius);
     }
 
     private void HandleInput()
@@ -286,6 +291,8 @@ public class PlayerController : MonoBehaviour
             isDodgeButtonPressed = false;
             isLockOnButtonPressed = false;
         }
+
+        if (animator != null) animator.SetMoveInput(moveInput);
     }
 
     private void UpdatePosFromBoneRig()
@@ -326,12 +333,16 @@ public class PlayerController : MonoBehaviour
     }
     private void HandleHorizontalMovement(float deltaTime)
     {
-        if (!IsGroundedState())
+        //NOTE: if we are not grounded we dont do horizontal movement, BUT
+        //if player rolls, the roll can NOT be canceled and thus the horizontal movement
+        //may not change during the roll
+        if (!IsGroundedState() || IsState(PlayerStateName.Rolling))
             return;
 
         if (isCrouchButtonPressed && doCrouching) ToggleCrouch();
 
         Vector3 horizontalMoveDir = CalculateHorizontalMoveDir();
+        Debug.Log($"Move dir: {horizontalMoveDir}");
         if (Utils.VecApproxEquals(horizontalMoveDir, Vector3.zero))
         {
             //If we dont have move input, but we have registered a move input velocity
@@ -349,20 +360,13 @@ public class PlayerController : MonoBehaviour
         else if (moveInput.magnitude < runInputMagnitudeThreshold) newMoveState = PlayerStateName.Walking;
         HandleWalkRunSprint(newMoveState, horizontalMoveDir, deltaTime);
 
-        //If we lock onto a target, we face in the direction of the target ALWAYS
-        //and we ensure we disregard the height so only XZ plane rotation is affected
+        //If we have a lock on target, we constantly update the facing direction to the target
+        //in case target moves and NOT just when the player moves, so to not mess with the lock on updating
+        //we dont update rotation here
         if (IsLockedOntoATarget())
-        {
-            targetFacingDirection = lockOnTarget.position - transform.position;
-            targetFacingDirection.y= 0.0f;
-            targetFacingDirection.Normalize();
-        }
-        //If we do not lock onto a target, we face in the direction we want to move
-        else
-        {
-            targetFacingDirection = horizontalMoveDir;
-        }
+            return;
 
+        targetFacingDirection = horizontalMoveDir;
         float rotateSpeed = idleRotateSpeed;
         if (newMoveState == PlayerStateName.Walking) rotateSpeed = walkMoveSettings.RotateSpeed;
         else if (newMoveState == PlayerStateName.Running) rotateSpeed = runMoveSettings.RotateSpeed;
@@ -370,12 +374,13 @@ public class PlayerController : MonoBehaviour
 
         Quaternion targetRotation = Quaternion.LookRotation(targetFacingDirection, Vector3.up);
         transform.rotation = Quaternion.RotateTowards(transform.rotation,
-                targetRotation, idleRotateSpeed * deltaTime);
+                targetRotation, rotateSpeed * deltaTime);
     }
     private Vector3 CalculateHorizontalMoveDir()
     {
-        Vector3 cameraForward = playerCamera.transform.forward;
-        Vector3 cameraRight = playerCamera.transform.right;
+        Camera camera = playerCamera.GetCamera();
+        Vector3 cameraForward = camera.transform.forward;
+        Vector3 cameraRight = camera.transform.right;
 
         //NOTE: since the camera can be rotated in pitch, the camera forward
         //and right y dir may != 0, but if we used non-0 value it would force
@@ -414,6 +419,7 @@ public class PlayerController : MonoBehaviour
         {
             movementSettings = sprintMoveSettings;
             moveMode = PlayerHorizontalMoveMode.Sprint;
+            SetStaminaDelta(-sprintStaminaLossRate * deltaTime);
         }
 
         if (!IsState(state)) SetState(state);
@@ -470,6 +476,17 @@ public class PlayerController : MonoBehaviour
     private void StartRoll()
     {
         SetState(PlayerStateName.Rolling);
+
+        //NOTE: since we always roll in the facing direction and facing dir is modified to look
+        //towards target in lock on mode, we dont always want to roll forward toward target, so
+        //we modify temporarily while in roll mode to face in the direction of the velocity
+        if (IsLockedOntoATarget())
+        {
+            targetFacingDirection = horizontalMoveVelocity.normalized;
+            Quaternion targetRotation = Quaternion.LookRotation(targetFacingDirection, Vector3.up);
+            transform.rotation = targetRotation;
+            Debug.Log($"Updated roll dir to: {targetFacingDirection}");
+        }
         if (animator != null) animator.SetActionTrigger(PlayerAnimationTrigger.Roll);
 
         SetStaminaDelta(-rollStaminaCost);
@@ -485,6 +502,8 @@ public class PlayerController : MonoBehaviour
         if (lockOnTarget != null)
         {
             lockOnTarget = null;
+            playerCamera.EnableOrbitMode();
+            if (animator != null) animator.SetLockedOn(false);
         }
         else
         {
@@ -510,7 +529,19 @@ public class PlayerController : MonoBehaviour
             }
 
             lockOnTarget = closestTarget.transform;
+            playerCamera.EnableLookatMode(lockOnTarget, true);
+            if (animator != null) animator.SetLockedOn(true);
         }
+    }
+
+    private void ForceFaceLockOnTarget()
+    {
+        targetFacingDirection = lockOnTarget.position - transform.position;
+        targetFacingDirection.y= 0.0f;
+        targetFacingDirection.Normalize();
+
+        Quaternion targetRotation = Quaternion.LookRotation(targetFacingDirection, Vector3.up);
+        transform.rotation = targetRotation;
     }
 
     public bool IsCrouchingState()
@@ -530,10 +561,8 @@ public class PlayerController : MonoBehaviour
         return !stateMachine.IsState((uint)PlayerStateName.Jumping) && 
                !stateMachine.IsState((uint)PlayerStateName.Falling);
     }
-    public bool IsLockedOntoATarget()
-    {
-        return lockOnTarget != null;
-    }
+    public bool IsLockedOntoATarget() { return lockOnTarget != null; }
+    public Transform GetLockOnTarget() { return lockOnTarget; }
 
     public bool IsState(PlayerStateName state)
     {

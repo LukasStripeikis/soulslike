@@ -4,6 +4,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+public enum HealthSizing : uint
+{
+    /// <summary>
+    /// The healthbar size will remain the same no matter the max health
+    /// </summary>
+    Constant    = 0,
+    /// <summary>
+    /// The healthbar size will match the health value times a multiplier
+    /// </summary>
+    FromValue   = 1
+}
+
 /// <summary>
 /// Used to display a health bar that updates based on <see cref="Game.Player.PlayerCharacter"/> events
 /// </summary>
@@ -18,6 +30,11 @@ public class HealthBar : MonoBehaviour
     [Range(0.0f, 1.0f)][SerializeField] private float healthIncreaseRate;
     private int currentHealth = 0;
     private int currentMaxHealth = 0;
+    [SerializeField] private HealthSizing maxHealthSizing;
+    /// <summary>
+    /// if health sizing is 'FromValue', this is 
+    /// the multiplier applied to the max health value 
+    /// </summary>
     [SerializeField] private float widthPer1Health = 0;
 
     [Header("Health Delta")]
@@ -155,13 +172,16 @@ public class HealthBar : MonoBehaviour
     {
         RectTransform rect = healthSlider.GetComponent<RectTransform>();
 
-        if (widthPer1Health == 0) widthPer1Health= rect.sizeDelta.x / newMaxHealth;
-        float newWidth= newMaxHealth * widthPer1Health;
+        if (maxHealthSizing == HealthSizing.FromValue)
+        {
+            if (widthPer1Health == 0) widthPer1Health= rect.sizeDelta.x / newMaxHealth;
+            float newWidth= newMaxHealth * widthPer1Health;
 
-        rect.anchorMin = new Vector2(0.0f, rect.anchorMin.y);
-        rect.anchorMax = new Vector2(0.0f, rect.anchorMax.y);
-        rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, newWidth);
-
+            rect.anchorMin = new Vector2(0.0f, rect.anchorMin.y);
+            rect.anchorMax = new Vector2(0.0f, rect.anchorMax.y);
+            rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, newWidth);
+        }
+        
         currentMaxHealth=newMaxHealth;
         currentHealth = currentMaxHealth;
     }

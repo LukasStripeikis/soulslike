@@ -117,7 +117,7 @@
                     "priority": 0
                 },
                 {
-                    "name": "CameraMove",
+                    "name": "CameraOrbit",
                     "type": "Value",
                     "id": "ae53836b-022f-4890-aa3d-990e940c7d72",
                     "expectedControlType": "Vector2",
@@ -191,6 +191,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Backstep",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "edad3427-d1a8-4436-96e0-ebbddb24c1ed",
+                    "path": "<Mouse>/middleButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";KeyboardMouse",
+                    "action": "LockOn",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -421,7 +432,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";KeyboardMouse",
-                    "action": "CameraMove",
+                    "action": "CameraOrbit",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -432,7 +443,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Gamepad",
-                    "action": "CameraMove",
+                    "action": "CameraOrbit",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
